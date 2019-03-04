@@ -2,46 +2,42 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:layout_width="match_parent"
-    >
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_weight="1"
+    android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/etMain_search"
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Search"
-        android:inputType="text"
-        android:singleLine="false"
-        android:textColor="#595959"
-        android:textSize="25sp" />
+        android:background="?attr/colorPrimary"
+        android:minHeight="?attr/actionBarSize"
+        app:theme="@style/ThemeOverlay.AppCompat.Dark" />
 
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swp_refresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <LinearLayout
-        android:gravity="center"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_width="match_parent">
+        <android.support.v4.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-        <Button
-            android:background="@color/colorPrimary"
-            android:layout_height="wrap_content"
-            android:id="@+id/btnMain_search"
-            android:layout_marginBottom="10dp"
-            android:padding="10dp"
-            android:text="Search"
-            android:textColor="#FDFDFD"
-            android:textSize="22sp"
-            android:layout_width="wrap_content"/>
+            <LinearLayout
+                android:id="@+id/linearlayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
 
-    </LinearLayout>
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/rv_articles"
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent"
+                    android:padding="15dp" />
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/rv_articles"
-        android:layout_width="fill_parent"
-        android:layout_height="match_parent"
-        android:padding="15dp"
-        />
-
+            </LinearLayout>
+        </android.support.v4.widget.NestedScrollView>
+    </android.support.v4.widget.SwipeRefreshLayout>
 </LinearLayout>
