@@ -4,9 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="50dp"
     android:layout_width="match_parent"
-    tools:context="br.com.matheuscastiglioni.blog.requisicao_http_retrofit.MainActivity">
+    >
 
     <EditText
         android:id="@+id/etMain_search"
@@ -17,6 +16,7 @@
         android:singleLine="false"
         android:textColor="#595959"
         android:textSize="25sp" />
+
 
     <LinearLayout
         android:gravity="center"
@@ -37,11 +37,11 @@
 
     </LinearLayout>
 
-    <TextView
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv_articles"
+        android:layout_width="fill_parent"
         android:layout_height="match_parent"
-        android:id="@+id/etMain_response"
-        android:textColor="#595959"
-        android:textSize="20sp"
-        android:layout_width="match_parent"/>
+        android:padding="15dp"
+        />
 
 </LinearLayout>

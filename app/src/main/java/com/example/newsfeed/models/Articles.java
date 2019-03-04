@@ -1,5 +1,11 @@
 package com.example.newsfeed.models;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
+import java.io.IOException;
+import java.net.URL;
+
 public class Articles {
     private String author, title, description, url, urlToImage, publishedAt, content;
     private Source source;
@@ -66,5 +72,15 @@ public class Articles {
 
     public void setSource(Source source) {
         this.source = source;
+    }
+
+    @Override
+    public String toString() {
+        return "Articles{" +
+                "title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", url='" + url + '\'' +
+                ", source=" + source +
+                '}';
     }
 }

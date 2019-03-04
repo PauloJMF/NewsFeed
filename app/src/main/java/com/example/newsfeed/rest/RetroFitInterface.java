@@ -10,6 +10,8 @@ import retrofit2.http.Query;
 public interface RetroFitInterface {
 
     @GET("/v2/everything")
-    Call<News>searchNews(@Query("q") String q, @Query("apikey") String apikey);
+    Call<News>searchNews(@Query("q") String q, @Query("apikey") String apikey, @Query("pageSize") int pageSize, @Query("page") int page);
+    @GET("/v2/top-headlines")
+    Call<News>searchRecent(@Query("country") String country , @Query("apikey") String apikey, @Query("pageSize") int pageSize, @Query("page") int page);
 
 }

@@ -9,6 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetroFitConfig {
 
     private String BASE_URL = "https://newsapi.org/";
+    public static int PAGE_SIZE = 20;
     private final Retrofit retrofit;
 
     public RetroFitConfig() {
