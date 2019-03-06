@@ -1,12 +1,8 @@
 package com.example.newsfeed.models;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import java.io.Serializable;
 
-import java.io.IOException;
-import java.net.URL;
-
-public class Articles {
+public class Article implements Serializable {
     private String author, title, description, url, urlToImage, publishedAt, content;
     private Source source;
 
@@ -76,11 +72,33 @@ public class Articles {
 
     @Override
     public String toString() {
-        return "Articles{" +
+        return "Article{" +
                 "title='" + title + '\'' +
                 ", description='" + description + '\'' +
                 ", url='" + url + '\'' +
                 ", source=" + source +
                 '}';
     }
+
+    public class Source {
+        private String id, name;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
+
 }

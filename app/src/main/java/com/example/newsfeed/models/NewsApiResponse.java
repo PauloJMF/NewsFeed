@@ -2,10 +2,10 @@ package com.example.newsfeed.models;
 
 import java.util.List;
 
-public class News {
+public class NewsApiResponse {
     private String status;
     private int totalResults;
-    private List<Articles> articles;
+    private List<Article> articles;
 
     public String getStatus() {
         return status;
@@ -23,17 +23,17 @@ public class News {
         this.totalResults = totalResults;
     }
 
-    public List<Articles> getArticles() {
+    public List<Article> getArticles() {
         return articles;
     }
 
-    public void setArticles(List<Articles> articles) {
+    public void setArticles(List<Article> articles) {
         this.articles = articles;
     }
 
     @Override
     public String toString() {
-        return "News{" +
+        return "NewsApiResponse{" +
                 "status='" + status + '\'' +
                 ", totalResults=" + totalResults +
                 '}';

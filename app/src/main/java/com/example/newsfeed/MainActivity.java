@@ -1,27 +1,26 @@
 package com.example.newsfeed;
 
 import android.content.Intent;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.SearchView;
+import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
-import android.view.View;
-import android.view.Window;
-import android.widget.LinearLayout;
+import android.view.ViewTreeObserver;
 import android.widget.Toast;
 
-import com.example.newsfeed.Adapter.ArticlesAdapter;
-import com.example.newsfeed.models.Articles;
-import com.example.newsfeed.models.News;
+import com.example.newsfeed.adapter.ArticleAdapter;
+import com.example.newsfeed.models.Article;
+import com.example.newsfeed.models.NewsApiResponse;
 import com.example.newsfeed.rest.RetroFitConfig;
 import com.example.newsfeed.utils.Utils;
 
@@ -31,29 +30,53 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements ArticlesAdapter.OnArticleListener, SwipeRefreshLayout.OnRefreshListener {
+public class MainActivity extends AppCompatActivity implements ArticleAdapter.OnArticleListener, SwipeRefreshLayout.OnRefreshListener {
     private final String API_KEY = "08f52c1dfdbd4876a8ebedbf36ebc339";
-    private List<Articles> articlesList;
-    private RecyclerView resp;
-    private int mPageNumber;
+    private final int PAGE_SIZE = 10;
+    private int mPageNumber = 1;
+    private boolean isLoading, end = false;
+    private List<Article> articleList, moreArticles;
+    private RecyclerView mRecyclerView;
     private Toolbar mToolbar;
-    private ArticlesAdapter adapter;
-    private SwipeRefreshLayout mswipeRefreshLayout;
+    private ArticleAdapter mArticleAdapter;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
     private SearchView mSearchView;
+    private String mQuery;
+    private RecyclerView.LayoutManager mLayoutManager;
+    private NestedScrollView mNestedScrollView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mswipeRefreshLayout = findViewById(R.id.swp_refresh);
-        mswipeRefreshLayout.setOnRefreshListener(this);
-        resp = findViewById(R.id.rv_articles);
-        resp.setHasFixedSize(true);
+        mSwipeRefreshLayout = findViewById(R.id.swp_refresh);
+        mSwipeRefreshLayout.setOnRefreshListener(this);
+
+        mRecyclerView = findViewById(R.id.rv_articles);
+        mRecyclerView.setHasFixedSize(true);
+
+
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
-        this.mPageNumber = 1;
-        onLoadingSwipeRefresh("");
+
+        onLoadingSwipeRefresh(this.mPageNumber);
+
+        mLayoutManager = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.VERTICAL, false);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        mNestedScrollView = findViewById(R.id.nestedsv);
+
+        mNestedScrollView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
+            @Override
+            public void onScrollChanged() {
+                if (!isLoading && !end && mNestedScrollView.getChildAt(0).getBottom()
+                        == (mNestedScrollView.getHeight() + mNestedScrollView.getScrollY())) {
+                    mPageNumber++;
+                    isLoading = true;
+                    onLoadingSwipeRefresh(mPageNumber);
+                }
+            }
+        });
     }
 
     @Override
@@ -62,11 +85,15 @@ public class MainActivity extends AppCompatActivity implements ArticlesAdapter.O
         inflater.inflate(R.menu.menu, menu);
         MenuItem mSearch = menu.findItem(R.id.action_search);
         mSearchView = (SearchView) mSearch.getActionView();
+        mSearchView.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        mNestedScrollView = findViewById(R.id.nestedsv);
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                onLoadingSwipeRefresh(query);
-                return true;
+                onLoadingSwipeRefresh(1);
+                mNestedScrollView.smoothScrollTo(0, 0);
+                mSearchView.clearFocus();
+                return false;
             }
 
             @Override
@@ -80,95 +107,109 @@ public class MainActivity extends AppCompatActivity implements ArticlesAdapter.O
 
     @Override
     public void OnArticleClick(int position) {
-        Log.e("NewsApi   ", "Article number :" + position);
-        Articles articles = articlesList.get(position);
+        Article article = articleList.get(position);
         Intent intent = new Intent(MainActivity.this, WebViewActivity.class);
-        intent.putExtra("urlTo", articles.getUrl());
+        intent.putExtra("urlTo", article.getUrl());
+        intent.putExtra("sourceName", article.getSource().getName());
         startActivity(intent);
-
     }
 
-    public void populateArticles(News news) {
-        if (articlesList!= null && !articlesList.isEmpty()) {
-            articlesList.clear();
+    public void populateArticles(NewsApiResponse newsApiResponse) {
+        articleList = newsApiResponse.getArticles();
+        mArticleAdapter = new ArticleAdapter(articleList, MainActivity.this);
+        mRecyclerView.setAdapter(mArticleAdapter);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+    }
+
+    public void appendArticles(NewsApiResponse newsApiResponse) {
+        moreArticles = newsApiResponse.getArticles();
+        if (moreArticles.isEmpty()) {
+            end = true;
+            isLoading = false;
+            return;
         }
-        articlesList = news.getArticles();
-        adapter = new ArticlesAdapter(articlesList, MainActivity.this);
-        resp.setAdapter(adapter);
-        RecyclerView.LayoutManager layout = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.VERTICAL, false);
-        resp.setLayoutManager(layout);
+        articleList.addAll(moreArticles);
+        mArticleAdapter = new ArticleAdapter(articleList, MainActivity.this);
+        mRecyclerView.setAdapter(mArticleAdapter);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        isLoading = false;
     }
 
-    public void makeSearchRequest(String query) {
-        Call<News> call = new RetroFitConfig().getRetrofit().searchNews(query, API_KEY, 20, mPageNumber, "publishedAt");
-        call.enqueue(new Callback<News>() {
+    public void resetState() {
+        end = false;
+        mPageNumber = 1;
+        isLoading = false;
+        if (articleList != null) {
+            articleList.clear();
+            mArticleAdapter.notifyDataSetChanged();
+        }
+    }
+
+    public void makeRequest(final int page) {
+        Call<NewsApiResponse> call;
+        this.mQuery = (mSearchView == null) ? "" : mSearchView.getQuery().toString();
+        if (this.mQuery.equals("")) {
+            call = new RetroFitConfig().getRetrofit().searchRecent(Utils.getCountry(), API_KEY, PAGE_SIZE, page);
+        } else {
+            call = new RetroFitConfig().getRetrofit().searchNews(this.mQuery, API_KEY, PAGE_SIZE, page, "publishedAt", Utils.getLanguage());
+        }
+        call.enqueue(new Callback<NewsApiResponse>() {
             @Override
-            public void onResponse(Call<News> call, Response<News> response) {
-                Log.e("NewsApi   ", "News = :" + response.toString());
+            public void onResponse(Call<NewsApiResponse> call, Response<NewsApiResponse> response) {
                 if (response.isSuccessful() && response.body().getArticles() != null) {
-                    News news = response.body();
-                    populateArticles(news);
-                    mswipeRefreshLayout.setRefreshing(false);
+                    Log.d("Request", "onResponse: " + response.body().toString() + "page: " + mPageNumber);
+                    NewsApiResponse newsApiResponse = response.body();
+                    if (page > 1) appendArticles(newsApiResponse);
+                    else {
+                        resetState();
+                        populateArticles(newsApiResponse);
+                    }
+                    mSwipeRefreshLayout.setRefreshing(false);
                 } else {
                     Toast toast = Toast.makeText(getApplicationContext(), "Error", Toast.LENGTH_SHORT);
                     toast.show();
-                    mswipeRefreshLayout.setRefreshing(false);
+                    mSwipeRefreshLayout.setRefreshing(false);
                 }
             }
 
             @Override
-            public void onFailure(Call<News> call, Throwable t) {
-                Log.e("NewsApi   ", "Erro ao buscar sobre:" + t.getMessage());
-                mswipeRefreshLayout.setRefreshing(false);
-            }
-        });
-
-    }
-
-    public void makeRecentRequest() {
-        Call<News> call = new RetroFitConfig().getRetrofit().searchRecent(Utils.getCountry(), API_KEY, 20, mPageNumber);
-        call.enqueue(new Callback<News>() {
-            @Override
-            public void onResponse(Call<News> call, Response<News> response) {
-                Log.e("NewsApi   ", "News = :" + response.toString());
-                if (response.isSuccessful() && response.body().getArticles() != null) {
-                    News news = response.body();
-                    populateArticles(news);
-                    mswipeRefreshLayout.setRefreshing(false);
-                } else {
-                    Toast toast = Toast.makeText(getApplicationContext(), "Error", Toast.LENGTH_SHORT);
-                    toast.show();
-                    mswipeRefreshLayout.setRefreshing(false);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<News> call, Throwable t) {
-                Log.e("NewsApi   ", "Erro ao buscar sobre:" + t.getMessage());
-                mswipeRefreshLayout.setRefreshing(false);
+            public void onFailure(Call<NewsApiResponse> call, Throwable t) {
+                mSwipeRefreshLayout.setRefreshing(false);
             }
         });
     }
 
     @Override
     public void onRefresh() {
-        mswipeRefreshLayout.setRefreshing(true);
-        if (mSearchView.getQuery().toString().equals("")) {
-            makeRecentRequest();
-        } else makeSearchRequest(mSearchView.getQuery().toString());
+        mSwipeRefreshLayout.setRefreshing(true);
+        makeRequest(mPageNumber);
     }
 
-    public void onLoadingSwipeRefresh(final String query) {
-        mswipeRefreshLayout.setRefreshing(true);
-        mswipeRefreshLayout.post(
+    //Create a new Query
+    public void onLoadingSwipeRefresh(final int mPageNumber) {
+        mSwipeRefreshLayout.setRefreshing(true);
+        mSwipeRefreshLayout.post(
                 new Runnable() {
                     @Override
                     public void run() {
-                        if (query.equals("")) makeRecentRequest();
-                        else makeSearchRequest(query);
+                        makeRequest(mPageNumber);
                     }
                 }
         );
 
     }
+
+    public void onBackPressed()
+    {
+        if(this.mQuery.equals("")){
+            super.onBackPressed();
+        }
+        mSearchView.setQuery("", false);
+        mSearchView.setIconified(true);
+        mSearchView.clearFocus();
+        this.mQuery = "";
+        resetState();
+        onLoadingSwipeRefresh(mPageNumber);
+    }
+
 }

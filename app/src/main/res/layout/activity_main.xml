@@ -7,13 +7,7 @@
     android:layout_weight="1"
     android:orientation="vertical">
 
-    <android.support.v7.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:minHeight="?attr/actionBarSize"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark" />
+    <include layout="@layout/app_toolbar" />
 
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/swp_refresh"
@@ -21,23 +15,26 @@
         android:layout_height="match_parent">
 
         <android.support.v4.widget.NestedScrollView
+            android:id="@+id/nestedsv"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <LinearLayout
+           <LinearLayout
                 android:id="@+id/linearlayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="horizontal">
 
-                <android.support.v7.widget.RecyclerView
+               <android.support.v7.widget.RecyclerView
                     android:id="@+id/rv_articles"
                     android:layout_width="fill_parent"
                     android:layout_height="match_parent"
                     android:padding="15dp" />
 
-            </LinearLayout>
+           </LinearLayout>
         </android.support.v4.widget.NestedScrollView>
+
     </android.support.v4.widget.SwipeRefreshLayout>
+
 </LinearLayout>

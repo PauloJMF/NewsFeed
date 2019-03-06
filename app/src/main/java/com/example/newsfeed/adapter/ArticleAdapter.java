@@ -1,8 +1,7 @@
-package com.example.newsfeed.Adapter;
+package com.example.newsfeed.adapter;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,19 +9,20 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.newsfeed.R;
-import com.example.newsfeed.models.Articles;
+import com.example.newsfeed.models.Article;
+
 import com.example.newsfeed.utils.Utils;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-public class ArticlesAdapter extends RecyclerView.Adapter {
+public class ArticleAdapter extends RecyclerView.Adapter {
 
-    private List<Articles> articlesList;
+    private List<Article> articleList;
     private OnArticleListener onArticleListener;
 
-    public ArticlesAdapter(List<Articles> articlesList, OnArticleListener onArticleListener) {
-        this.articlesList = articlesList;
+    public ArticleAdapter(List<Article> articleList, OnArticleListener onArticleListener) {
+        this.articleList = articleList;
         this.onArticleListener = onArticleListener;
     }
 
@@ -37,19 +37,21 @@ public class ArticlesAdapter extends RecyclerView.Adapter {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
         ArticlesViewHolder holder = (ArticlesViewHolder) viewHolder;
-        Articles article = articlesList.get(i);
+        Article article = articleList.get(i);
         holder.title.setText(article.getTitle());
         holder.description.setText(article.getDescription());
         holder.sourceName.setText(article.getSource().getName());
-        Log.d("picasso", "onBindViewHolder: "+article.getUrlToImage());
         if (article.getUrlToImage() != null && !article.getUrlToImage().equals("")) {
             Picasso.get().load(article.getUrlToImage()).into(holder.image);
+        }
+        if (article.getPublishedAt() != null) {
+            holder.timepost.setText("- "+ Utils.getFormattedDate(article.getPublishedAt()));
         }
     }
 
     @Override
     public int getItemCount() {
-        return articlesList.size();
+        return articleList.size();
     }
 
     public class ArticlesViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
