@@ -15,7 +15,9 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import android.view.View;
 import android.view.ViewTreeObserver;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.newsfeed.adapter.ArticleAdapter;
@@ -44,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements ArticleAdapter.On
     private String mQuery;
     private RecyclerView.LayoutManager mLayoutManager;
     private NestedScrollView mNestedScrollView;
+    private TextView mEmptyView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements ArticleAdapter.On
                 }
             }
         });
+        mEmptyView = findViewById(R.id.empty_view);
     }
 
     @Override
@@ -90,7 +94,8 @@ public class MainActivity extends AppCompatActivity implements ArticleAdapter.On
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                onLoadingSwipeRefresh(1);
+                setTitle("NewsFeed - "+query);
+                onLoadingSwipeRefresh(mPageNumber);
                 mNestedScrollView.smoothScrollTo(0, 0);
                 mSearchView.clearFocus();
                 return false;
@@ -115,6 +120,13 @@ public class MainActivity extends AppCompatActivity implements ArticleAdapter.On
     }
 
     public void populateArticles(NewsApiResponse newsApiResponse) {
+        if(newsApiResponse.getArticles().isEmpty() && mPageNumber==1)
+        {
+            mRecyclerView.setVisibility(View.GONE);
+            mEmptyView.setVisibility(View.VISIBLE);
+            mSwipeRefreshLayout.setRefreshing(false);
+            return;
+        }
         articleList = newsApiResponse.getArticles();
         mArticleAdapter = new ArticleAdapter(articleList, MainActivity.this);
         mRecyclerView.setAdapter(mArticleAdapter);
@@ -157,7 +169,8 @@ public class MainActivity extends AppCompatActivity implements ArticleAdapter.On
             @Override
             public void onResponse(Call<NewsApiResponse> call, Response<NewsApiResponse> response) {
                 if (response.isSuccessful() && response.body().getArticles() != null) {
-                    Log.d("Request", "onResponse: " + response.body().toString() + "page: " + mPageNumber);
+                    mRecyclerView.setVisibility(View.VISIBLE);
+                    mEmptyView.setVisibility(View.GONE);
                     NewsApiResponse newsApiResponse = response.body();
                     if (page > 1) appendArticles(newsApiResponse);
                     else {
@@ -166,14 +179,16 @@ public class MainActivity extends AppCompatActivity implements ArticleAdapter.On
                     }
                     mSwipeRefreshLayout.setRefreshing(false);
                 } else {
-                    Toast toast = Toast.makeText(getApplicationContext(), "Error", Toast.LENGTH_SHORT);
-                    toast.show();
+                    mRecyclerView.setVisibility(View.GONE);
+                    mEmptyView.setVisibility(View.VISIBLE);
                     mSwipeRefreshLayout.setRefreshing(false);
                 }
             }
 
             @Override
             public void onFailure(Call<NewsApiResponse> call, Throwable t) {
+                Toast toast = Toast.makeText(getApplicationContext(), "Problemas de conexão !", Toast.LENGTH_SHORT);
+                toast.show();
                 mSwipeRefreshLayout.setRefreshing(false);
             }
         });
@@ -185,7 +200,6 @@ public class MainActivity extends AppCompatActivity implements ArticleAdapter.On
         makeRequest(mPageNumber);
     }
 
-    //Create a new Query
     public void onLoadingSwipeRefresh(final int mPageNumber) {
         mSwipeRefreshLayout.setRefreshing(true);
         mSwipeRefreshLayout.post(
@@ -199,11 +213,11 @@ public class MainActivity extends AppCompatActivity implements ArticleAdapter.On
 
     }
 
-    public void onBackPressed()
-    {
-        if(this.mQuery.equals("")){
+    public void onBackPressed() {
+        if (this.mQuery.equals("")) {
             super.onBackPressed();
         }
+        setTitle("NewsFeed - Principais Noticias");
         mSearchView.setQuery("", false);
         mSearchView.setIconified(true);
         mSearchView.clearFocus();
