@@ -16,5 +16,5 @@ Melhoramentos futuros:<br>
   -Adicionar RecyclerView com Categorias;<br>
   -Utilizar cache nas imagens para economizar dados;<br>
   -Melhorar a interface do WebView;<br>
-  
  
+ [Download](https://drive.google.com/open?id=17lgD986Lr_Esy9otrlEwg0-rz9NygkoN)
